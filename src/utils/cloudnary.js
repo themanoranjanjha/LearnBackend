@@ -25,4 +25,23 @@ const uploadOnCloudinary = async (localFilePath) => {
         return null;
     }
 }
-export { uploadOnCloudinary }
+
+ const removePreviousAvatar = async (avatarUrl) => {
+    if (!avatarUrl) {
+        // console.log("No avatar URL provided. Skipping removal.");
+        return;
+    } 
+
+    try {
+        // Extract the public_id from the Cloudinary URL
+        const publicId = avatarUrl.split('/').pop().split('.')[0];
+
+        // Delete the avatar from Cloudinary
+        await cloudinary.uploader.destroy(publicId);
+        // console.log(`Successfully removed avatar: ${publicId}`);
+    } catch (error) {
+        console.error("Error while removing the previous avatar:", error.message);
+        throw new Error("Failed to remove the previous avatar.");
+    }
+};
+export { uploadOnCloudinary , removePreviousAvatar}

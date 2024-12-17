@@ -1,9 +1,10 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import {uploadOnCloudinary} from "../utils/cloudnary.js"
+import {uploadOnCloudinary, removePreviousAvatar} from "../utils/cloudnary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 import  jwt from 'jsonwebtoken';
+
 
 
 const generateAccessAndRefereshTokens = async(userId)=>
@@ -214,6 +215,7 @@ const changeCurrentPassword = asyncHandler(async(req, res) => {
     }
     user.password = newPassword
     await user.save({validateBeforeSave: false})
+
     return res
     .status(200)
     .json(new ApiResponse(200, {}, "Password changed successfully"))
@@ -246,20 +248,26 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
 })
 
 const updateUserAvatar = asyncHandler(async(req, res) => {
+
     const avatarLocalPath = req.file?.path
     if(!avatarLocalPath){
         throw new ApiError(400, "Avatar file is missing")
+    }
+    if(req.user.avatar){
+        await removePreviousAvatar(req.user.avatar)
     }
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     if(!avatar.url){
         throw new ApiError(400, "Error while uploading on avatar")
     }
+    
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set: {
                 avatar: avatar.url
             }
+            
         },
         {new: true}
         ).select("-password")
